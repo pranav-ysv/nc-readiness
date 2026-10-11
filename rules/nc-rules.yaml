@@ -1,0 +1,204 @@
+# North Carolina requirements catalog — birth to 18
+# Save in the repo as: rules/nc-rules.yaml
+#
+# HOW TO USE THIS FILE
+# - Each rule is one requirement a child may face.
+# - verified_on: the date YOU personally checked the official source. null = not yet verified.
+#   Rules with verified_on: null must never be shown to users.
+# - Rules 1-6 have sources found during research, but still need Pranav's own check
+#   against the official NCDHHS / NC Medicaid pages before verified_on is filled in.
+# - Rules 7+ are placeholders: find the official source, confirm every detail, then fill in.
+#
+# FIELD GUIDE
+# id            unique, lowercase, hyphenated
+# category      school_health | coverage | identity | travel | driving | work | adulthood
+# applies_if    conditions on the child profile (engine decides who sees the rule)
+# trigger       what starts the clock: school_entry, grade_entry, age, or recurring
+# deadline      when proof is due, relative to the trigger
+# proof         what document(s) satisfy the rule
+# consequence   what happens if missed (keep factual)
+# where         which local office type can help (matched against places/)
+# sources       official links first; secondary links only as support
+# verified_on   YYYY-MM-DD or null
+# notes         anything the engine or Pranav needs to remember
+
+rules:
+
+  - id: nc-school-health-assessment
+    title: Health assessment for first entry to NC public school
+    category: school_health
+    applies_if:
+      enrolling_in_nc_public_school_for_first_time: true   # includes pre-K, K, transfers from out of state, private, or home school
+    trigger: school_entry
+    deadline:
+      within_calendar_days_of_first_attendance: 30
+      exam_window: "completed within 12 months before the first day of school"
+    proof: "North Carolina Health Assessment Transmittal Form, completed by a licensed provider"
+    consequence: "Student is excluded from school after day 30 until the form is received"
+    where: [pediatrician, county_health_department]
+    sources:
+      - "NC G.S. 130A-440 (health assessment law)"
+      - https://www.chccs.org/families/health-services/health-immunization-requirements-for-school-entry
+      - https://www.carteretcountync.gov/m/newsflash/Home/Detail/499
+    verified_on: null
+    notes: "Confirm the 12-month exam window and the exact form name on the official NCDHHS page."
+
+  - id: nc-school-immunization-certificate
+    title: Immunization record for school enrollment
+    category: school_health
+    applies_if:
+      enrolling_in_nc_public_school: true
+    trigger: school_entry
+    deadline:
+      within_calendar_days_of_first_attendance: 30
+    proof: "Certificate of immunization from a licensed provider or health department, or a valid medical/religious exemption"
+    consequence: "Student is excluded from school after day 30 until the record is received"
+    where: [pediatrician, county_health_department]
+    sources:
+      - "NC G.S. 130A-155 (immunization law)"
+      - https://www.dph.ncdhhs.gov/programs/epidemiology/immunization/schools/k-12
+      - https://www.chccs.org/families/health-services/health-immunization-requirements-for-school-entry
+    verified_on: null
+    notes: "Kindergarten vaccine list lives on the NCDHHS K-12 page — add it as structured data in a later pass."
+
+  - id: nc-7th-grade-tdap
+    title: Tdap booster before 7th grade
+    category: school_health
+    applies_if:
+      attends_nc_school: true
+    trigger:
+      grade_entry: 7
+      or_age: 12            # "entering 7th grade or by 12 years of age, whichever comes first"
+    deadline:
+      within_calendar_days_of_first_attendance: 30
+    proof: "Immunization record showing 1 dose of Tdap"
+    consequence: "Student is excluded from school after day 30 until proof is received"
+    where: [pediatrician, county_health_department]
+    sources:
+      - https://www.dph.ncdhhs.gov/programs/epidemiology/immunization/schools/k-12
+      - https://www.gcsnc.com/families/connection-wellbeing/health-wellness/heath-services-2
+    verified_on: null
+    notes: "Engine must compute 'whichever comes first' between grade entry and 12th birthday."
+
+  - id: nc-7th-grade-menacwy
+    title: Meningococcal vaccine (first dose) before 7th grade
+    category: school_health
+    applies_if:
+      attends_nc_school: true
+    trigger:
+      grade_entry: 7
+      or_age: 12
+    deadline:
+      within_calendar_days_of_first_attendance: 30
+    proof: "Immunization record showing 1 dose of meningococcal conjugate vaccine (MenACWY / MCV)"
+    consequence: "Student is excluded from school after day 30 until proof is received"
+    where: [pediatrician, county_health_department]
+    sources:
+      - https://www.dph.ncdhhs.gov/programs/epidemiology/immunization/schools/k-12
+      - https://www.gcs.k12.nc.us/studentandfamilyservices
+    verified_on: null
+    notes: "Does not apply to students who entered 7th grade before July 1, 2015 (irrelevant for current students, but keep for accuracy)."
+
+  - id: nc-12th-grade-menacwy-booster
+    title: Meningococcal booster before 12th grade
+    category: school_health
+    applies_if:
+      attends_nc_school: true
+    trigger:
+      grade_entry: 12
+      or_age: 17            # "entering 12th grade or by 17 years of age, whichever comes first"
+    deadline:
+      within_calendar_days_of_first_attendance: 30
+    proof: "Immunization record showing a second (booster) dose of MenACWY"
+    consequence: "Student is excluded from school after day 30 until proof is received"
+    where: [pediatrician, county_health_department]
+    sources:
+      - https://www.dph.ncdhhs.gov/programs/epidemiology/immunization/schools/k-12
+      - https://www.carteretcountync.gov/m/newsflash/Home/Detail/499
+    verified_on: null
+    notes: "One county source says the booster is required if the first dose was given before age 16. Confirm the exact condition on the NCDHHS page before encoding it."
+
+  - id: nc-medicaid-annual-renewal
+    title: Medicaid renewal (recertification)
+    category: coverage
+    applies_if:
+      has_nc_medicaid: true
+    trigger: recurring_yearly
+    deadline:
+      due_date_from_renewal_notice: true   # the app reads the date off a photo of the notice
+    proof: "Completed renewal form plus any requested documents (e.g. proof of income)"
+    consequence: "Coverage can end for procedural reasons even if the child is still eligible"
+    where: [county_dss]
+    sources:
+      - https://www.northcarolinahealthnews.org/2024/07/24/unwinding-winding-down/
+      - "TODO: official NC Medicaid renewal page (medicaid.ncdhhs.gov)"
+    verified_on: null
+    notes: "Need the official renewal process page: how notices arrive, response window, how to submit (online, mail, in person)."
+
+  # ---------- PLACEHOLDERS: find official source, confirm, then fill in ----------
+
+  - id: birth-certificate-certified-copy
+    title: Certified copy of birth certificate
+    category: identity
+    trigger: event          # needed for school enrollment, passport, Social Security, DMV
+    proof: "Certified copy from NC Vital Records or the county Register of Deeds"
+    where: [register_of_deeds]
+    sources: ["TODO: NC Vital Records official page"]
+    verified_on: null
+
+  - id: social-security-number-at-birth
+    title: Social Security number for a newborn
+    category: identity
+    trigger: event
+    sources: ["TODO: SSA official page on applying for a child's number at birth"]
+    verified_on: null
+
+  - id: passport-minor-renewal
+    title: Passport renewal for a child under 16
+    category: travel
+    applies_if:
+      has_passport: true
+    trigger: recurring       # minor passports have shorter validity than adult passports — confirm the exact rule
+    sources: ["TODO: travel.state.gov page on passports for children under 16"]
+    verified_on: null
+
+  - id: nc-driver-education
+    title: Driver education eligibility
+    category: driving
+    trigger:
+      age_years: 14
+      age_months: 6          # confirm on NCDMV
+    sources: ["TODO: NCDMV teen driver / graduated licensing page"]
+    verified_on: null
+
+  - id: nc-driving-eligibility-certificate
+    title: Driving Eligibility Certificate (from school)
+    category: driving
+    sources: ["TODO: NCDMV and NC DPI pages on the Driving Eligibility Certificate"]
+    verified_on: null
+
+  - id: nc-youth-employment-certificate
+    title: Youth Employment Certificate before a first job
+    category: work
+    applies_if:
+      age_under: 18
+    trigger: event          # before starting any job
+    sources: ["TODO: NC Department of Labor youth employment page"]
+    verified_on: null
+
+  - id: selective-service-registration
+    title: Selective Service registration
+    category: adulthood
+    trigger:
+      age_years: 18
+    sources: ["TODO: sss.gov — confirm who must register and the window"]
+    verified_on: null
+
+  - id: records-access-at-18
+    title: Medical and school records access changes at 18
+    category: adulthood
+    trigger:
+      age_years: 18
+    notes: "Parents lose automatic access to medical (HIPAA) and school (FERPA) records. Identify official explanations before writing this rule."
+    sources: ["TODO: HHS HIPAA page; US Dept of Education FERPA page"]
+    verified_on: null
